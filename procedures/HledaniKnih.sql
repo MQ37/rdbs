@@ -1,0 +1,8 @@
+DELIMITER $$
+CREATE DEFINER=`root`@`%` PROCEDURE `HledaniKnih`(IN searchTerm VARCHAR(128))
+BEGIN
+  SELECT *
+  FROM Books
+  WHERE MATCH(name) AGAINST(searchTerm);
+END$$
+DELIMITER ;
