@@ -22,3 +22,9 @@ FROM information_schema.tables t
 WHERE t.table_schema = 'library'
 AND t.table_type = 'BASE TABLE'
 GROUP BY t.table_name) AS table_rows;
+
+
+-- Lock
+LOCK TABLES Books READ;
+SELECT * FROM Books;
+UNLOCK TABLES;
