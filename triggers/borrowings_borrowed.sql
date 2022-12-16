@@ -1,8 +1,6 @@
-CREATE TRIGGER `borrowings_returned` AFTER UPDATE ON `Borrowings`
+CREATE TRIGGER `borrowings_borrowed` AFTER INSERT ON `Borrowings`
  FOR EACH ROW BEGIN
 
-	IF NEW.returned = 1 THEN
-    	INSERT INTO BorrowingsLog(bor_id, returned_at, state) VALUES (OLD.bor_id, NOW(), "returned");
-    END IF;
+    INSERT INTO BorrowingsLog(bor_id, returned_at, state) VALUES (NEW.bor_id, NULL, "borrowed");
 
 END
