@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Nov 26, 2022 at 09:11 PM
+-- Generation Time: Dec 18, 2022 at 03:22 PM
 -- Server version: 10.3.34-MariaDB-1:10.3.34+maria~focal
 -- PHP Version: 8.0.19
 
@@ -25,6 +25,43 @@ DELIMITER $$
 --
 -- Procedures
 --
+CREATE DEFINER=`root`@`%` PROCEDURE `HledaniKnih` (IN `searchTerm` VARCHAR(128))   BEGIN
+  SELECT *
+  FROM Books
+  WHERE MATCH(name) AGAINST(searchTerm);
+END$$
+
+CREATE DEFINER=`root`@`%` PROCEDURE `PujcKnihu` (IN `shelfbookId` INT, IN `userId` INT)   BEGIN
+  START TRANSACTION;
+
+  SELECT COUNT(*)
+  INTO @shelfbookExists
+  FROM ShelfBooks
+  WHERE shelfbook_id = shelfbookId;
+
+  IF @shelfbookExists = 0 THEN
+    ROLLBACK;
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Kniha neexistuje';
+  END IF;
+
+  SELECT COUNT(*)
+  INTO @shelfbookBorrowed
+  FROM Borrowings
+  WHERE shelfbook_id = shelfbookId;
+
+  IF @shelfbookBorrowed > 0 THEN
+    ROLLBACK;
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Kniha už byla zapůjčena';
+  END IF;
+
+  INSERT INTO Borrowings (bor_id, user_id, shelfbook_id, borrowed_at)
+  VALUES (NULL, userId, shelfbookId, CURRENT_TIMESTAMP());
+
+  COMMIT;
+END$$
+
 CREATE DEFINER=`root`@`%` PROCEDURE `ZapujceneKnihy` ()   BEGIN
 
 DECLARE done INT DEFAULT FALSE;
@@ -67,6 +104,16 @@ END$$
 --
 CREATE DEFINER=`root`@`%` FUNCTION `NazevKnihy` (`b_id` INT) RETURNS VARCHAR(128) CHARSET utf8  RETURN
   (SELECT name FROM Books WHERE book_id=b_id)$$
+
+CREATE DEFINER=`root`@`%` FUNCTION `PrumerneHodnoceniAutora` (`authorId` INT) RETURNS DECIMAL(10,2)  BEGIN
+  RETURN (SELECT AVG(r.rating)
+  FROM RatingsAuthors r
+  WHERE r.author_id = authorId);
+END$$
+
+CREATE DEFINER=`root`@`%` FUNCTION `PrumerneHodnoceniKnihy` (`bookId` INT) RETURNS DECIMAL(10,2)  BEGIN
+  RETURN (SELECT AVG(r.rating) FROM RatingsBooks AS r WHERE r.book_id = bookId);
+END$$
 
 DELIMITER ;
 
@@ -157,7 +204,9 @@ INSERT INTO `Books` (`book_id`, `lang_id`, `name`, `released`) VALUES
 (26, 1, 'Na západní frontě klid', NULL),
 (27, 1, 'Osudy dobrého vojáka Švejka za světové války', NULL),
 (28, 1, '1984', NULL),
-(29, 1, 'Farma zvířat', NULL);
+(29, 1, 'Farma zvířat', NULL),
+(30, 1, 'Moje kniha', NULL),
+(32, 1, 'Pán prstenů Vol. X', NULL);
 
 -- --------------------------------------------------------
 
@@ -203,7 +252,8 @@ INSERT INTO `BooksAuthors` (`author_id`, `book_id`) VALUES
 (21, 26),
 (22, 27),
 (2, 28),
-(2, 29);
+(2, 29),
+(1, 32);
 
 -- --------------------------------------------------------
 
@@ -286,16 +336,28 @@ INSERT INTO `Borrowings` (`bor_id`, `user_id`, `shelfbook_id`, `borrowed_at`, `r
 (17, 17, 17, '2022-06-13', 0),
 (18, 18, 18, '2022-06-13', 0),
 (19, 19, 19, '2022-06-13', 0),
-(20, 20, 20, '2022-06-13', 0);
+(20, 20, 20, '2022-06-13', 0),
+(21, 1, 25, '2022-12-08', 0),
+(22, 1, 24, '2022-12-08', 1);
 
 --
 -- Triggers `Borrowings`
 --
 DELIMITER $$
+CREATE TRIGGER `borrowings_borrowed` AFTER INSERT ON `Borrowings` FOR EACH ROW BEGIN
+
+	IF NEW.returned = 0 THEN
+    	INSERT INTO BorrowingsLog(bor_id, state) VALUES (NEW.bor_id, "borrowed");
+    END IF;
+
+END
+$$
+DELIMITER ;
+DELIMITER $$
 CREATE TRIGGER `borrowings_returned` AFTER UPDATE ON `Borrowings` FOR EACH ROW BEGIN
 
 	IF NEW.returned = 1 THEN
-    	INSERT INTO BorrowingsLog(bor_id, returned_at) VALUES (OLD.bor_id, NOW());
+    	INSERT INTO BorrowingsLog(bor_id, returned_at, state) VALUES (OLD.bor_id, NOW(), "returned");
     END IF;
 
 END
@@ -311,15 +373,18 @@ DELIMITER ;
 CREATE TABLE `BorrowingsLog` (
   `id` int(11) NOT NULL,
   `bor_id` int(11) DEFAULT NULL,
-  `returned_at` date DEFAULT NULL
+  `returned_at` date DEFAULT NULL,
+  `state` varchar(32) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `BorrowingsLog`
 --
 
-INSERT INTO `BorrowingsLog` (`id`, `bor_id`, `returned_at`) VALUES
-(1, 1, '2022-11-26');
+INSERT INTO `BorrowingsLog` (`id`, `bor_id`, `returned_at`, `state`) VALUES
+(1, 1, '2022-11-26', 'returned'),
+(2, 22, NULL, 'borrowed'),
+(3, 22, '2022-12-08', 'returned');
 
 -- --------------------------------------------------------
 
@@ -576,6 +641,30 @@ INSERT INTO `Users` (`user_id`, `first_name`, `last_name`, `created_at`) VALUES
 (19, 'Zuzana', 'Rychlá', '2022-06-13 17:27:01'),
 (20, 'Anežka', 'Vomáčková', '2022-06-13 17:28:26');
 
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `ZapujceneKnihy`
+-- (See below for the actual view)
+--
+CREATE TABLE `ZapujceneKnihy` (
+`Název knihy` varchar(128)
+,`ID knihy` int(11)
+,`Zapůjčeno` date
+,`Jméno` varchar(32)
+,`Přijmení` varchar(32)
+,`ID uživatele` int(11)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `ZapujceneKnihy`
+--
+DROP TABLE IF EXISTS `ZapujceneKnihy`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `ZapujceneKnihy`  AS SELECT `bk`.`name` AS `Název knihy`, `b`.`shelfbook_id` AS `ID knihy`, `b`.`borrowed_at` AS `Zapůjčeno`, `u`.`first_name` AS `Jméno`, `u`.`last_name` AS `Přijmení`, `u`.`user_id` AS `ID uživatele` FROM (((`Borrowings` `b` join `ShelfBooks` `sb` on(`b`.`shelfbook_id` = `sb`.`shelfbook_id`)) join `Books` `bk` on(`sb`.`book_id` = `bk`.`book_id`)) join `Users` `u` on(`b`.`user_id` = `u`.`user_id`)) WHERE `b`.`returned` = 00  ;
+
 --
 -- Indexes for dumped tables
 --
@@ -592,6 +681,7 @@ ALTER TABLE `Authors`
 ALTER TABLE `Books`
   ADD PRIMARY KEY (`book_id`),
   ADD KEY `lang_id` (`lang_id`);
+ALTER TABLE `Books` ADD FULLTEXT KEY `book_name_ft` (`name`);
 
 --
 -- Indexes for table `BooksAuthors`
@@ -675,19 +765,19 @@ ALTER TABLE `Authors`
 -- AUTO_INCREMENT for table `Books`
 --
 ALTER TABLE `Books`
-  MODIFY `book_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `book_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `Borrowings`
 --
 ALTER TABLE `Borrowings`
-  MODIFY `bor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `bor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `BorrowingsLog`
 --
 ALTER TABLE `BorrowingsLog`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `Genres`
