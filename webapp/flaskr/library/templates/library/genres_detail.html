@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    header {
+        text-align: center;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+    }
+
+    .result {
+        flex-basis: 50%;
+    }
+</style>
+
+<header>
+    <h1>Library - Genre detail</h1>
+    <h3>{{ genre.genre }}</h3>
+</header>
+
+<div class="container">
+    <section class="result">
+    {% if books %}
+        <ul>
+        {% for book in books %}
+            <li>
+                <a href="{{ url_for('library.books_detail_view', pk=book.book_id) }}">
+                    {{ book.name }}
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    </section>
+</div>
+
+{% endblock %}
+
+
+

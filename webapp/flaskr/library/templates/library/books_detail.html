@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    header {
+        text-align: center;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+    }
+</style>
+
+<header>
+    <h1>Library - Book detail</h1>
+</header>
+
+<div class="container">
+    <section>
+        <h3>{{ book.name }}</h3>
+
+        <strong>Language</strong>: {{ book.language.lang }}<br>
+
+        <strong>Authors</strong>:
+        {% if book.authors %}
+        <ul>
+            {% for author in book.authors %}
+                <li>
+                    <a href="{{ url_for('library.authors_detail_view', pk=author.author_id) }}">
+                        {{ author.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        -
+        {% endif %}
+        <br>
+
+        <strong>Genres</strong>:
+        {% if book.genres %}
+        <ul>
+            {% for genre in book.genres %}
+                <li>
+                    <a href="{{ url_for('library.genres_detail_view', pk=genre.genre_id) }}">
+                        {{ genre.genre }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        -
+        {% endif %}
+        <br>
+    </section>
+</div>
+{% endblock %}
+
+

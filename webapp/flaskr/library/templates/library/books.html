@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .table-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    table tbody tr td:not(:last-child) {
+        padding-right: 1em;
+    }
+
+    header {
+        text-align: center;
+    }
+</style>
+
+<header>
+    <h1>Library - Books</h1>
+</header>
+
+<div class="table-container">
+<table>
+    <thead>
+        <tr>
+            <th>Book</th>
+            <th>Authors</th>
+            <th>Genres</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for book in books %}
+        <tr>
+
+            <td>
+                <a href="{{ url_for('library.books_detail_view', pk=book.book_id) }}">
+                    {{ book.name }}
+                </a>
+            </td>
+            <td>
+            {% if book.authors %}
+                {% for author in book.authors %}
+                    <a href="{{ url_for('library.authors_detail_view', pk=author.author_id) }}">
+                        {{ author.name }}
+                    </a>
+                    {% if not loop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                -
+            {% endif %}
+            </td>
+            <td>
+            {% if book.genres %}
+                {% for genre in book.genres %}
+                    <a href="{{ url_for('library.genres_detail_view', pk=genre.genre_id) }}">
+                        {{ genre.genre }}
+                    </a>
+                    {% if not loop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                -
+            {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% endblock %}
+

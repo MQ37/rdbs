@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    header {
+        text-align: center;
+    }
+    form button, form input {
+        border-radius: 0;
+        font-family: Times Newer Roman;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+    }
+
+    .result {
+        flex-basis: 50%;
+    }
+</style>
+
+<header>
+    <h1>Library - Search</h1>
+    <div>
+        <form action="{{ url_for('library.search_view') }}" method="GET">
+            <label for="query">Query:</label>
+            <input type="text" name="q" id="query">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+</header>
+
+<div class="container">
+    <section class="result">
+    {% if books %}
+        <ul>
+        {% for book in books %}
+            <li>
+                <a href="{{ url_for('library.books_detail_view', pk=book.book_id) }}">
+                    {{ book.name }}
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    </section>
+</div>
+
+
+{% endblock %}
+
+

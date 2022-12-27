@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .table-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    table tbody tr td:not(:last-child) {
+        padding-right: 1em;
+    }
+
+    header {
+        text-align: center;
+    }
+</style>
+
+<header>
+    <h1>Library - Genres</h1>
+</header>
+
+<div class="table-container">
+<table>
+    <thead>
+        <tr>
+            <th>Author</th>
+            <th># Books</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for genre in genres %}
+        <tr>
+
+            <td>
+                <a href="{{ url_for('library.genres_detail_view', pk=genre.genre_id) }}">
+                    {{ genre.genre }}
+                </a>
+            </td>
+            <td>
+            {% if genre.books %}
+                {{ genre.books|length }}
+            {% else %}
+                -
+            {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% endblock %}
+
+
+

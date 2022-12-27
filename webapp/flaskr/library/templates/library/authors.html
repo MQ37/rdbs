@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .table-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    table tbody tr td:not(:last-child) {
+        padding-right: 1em;
+    }
+
+    header {
+        text-align: center;
+    }
+</style>
+
+<header>
+    <h1>Library - Authors</h1>
+</header>
+
+<div class="table-container">
+<table>
+    <thead>
+        <tr>
+            <th>Author</th>
+            <th># Books</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for author in authors %}
+        <tr>
+
+            <td>
+                <a href="{{ url_for('library.authors_detail_view', pk=author.author_id) }}">
+                    {{ author.name }}
+                </a>
+            </td>
+            <td>
+            {% if author.books %}
+                {{ author.books|length }}
+            {% else %}
+                -
+            {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% endblock %}
+
+

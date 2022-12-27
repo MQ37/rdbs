@@ -1,0 +1,44 @@
+<html lang="en">
+    <head>
+        <title></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                font-family: Times Newer Roman;
+            }
+            nav ul li {
+                display: inline;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <ul>
+                <li>
+                    <a href="{{ url_for('index_view') }}">Home</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('library.index_view') }}">Overview</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('library.books_view') }}">Books</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('library.authors_view') }}">Authors</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('library.genres_view') }}">Genres</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('library.search_view') }}">Search</a>
+                </li>
+            </ul>
+        </nav>
+        <div>
+            {% block content %}
+
+            {% endblock %}
+        </div>
+    </body>
+</html>
+
