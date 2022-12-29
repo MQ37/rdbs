@@ -29,6 +29,7 @@ class Book(db.Model):
                              back_populates="books",
                              secondary="BooksGenres")
     language = db.relationship("Language", back_populates="books")
+    shelfbooks = db.relationship("ShelfBook", back_populates="book")
 
 
 bookaut = db.Table(
@@ -65,3 +66,39 @@ class Language(db.Model):
     lang = db.Column(db.String(64), nullable=False)
 
     books = db.relationship("Book", back_populates="language")
+
+
+class ShelfBook(db.Model):
+    __tablename__ = 'ShelfBooks'
+
+    shelfbook_id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.ForeignKey("Books.book_id"), nullable=False)
+    stocked_at = db.Column(db.Date, nullable=False)
+
+    book = db.relationship("Book", back_populates="shelfbooks")
+    borrowings = db.relationship("Borrowing", back_populates="shelfbook")
+
+
+class User(db.Model):
+    __tablename__ = 'Users'
+
+    user_id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(32), nullable=False)
+    last_name = db.Column(db.String(32), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+    borrowings = db.relationship("Borrowing", back_populates="user")
+
+
+class Borrowing(db.Model):
+    __tablename__ = 'Borrowings'
+
+    bor_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey("Users.user_id"), nullable=False)
+    shelfbook_id = db.Column(db.ForeignKey("ShelfBooks.book_id"),
+                             nullable=False)
+    borrowed_at = db.Column(db.Date, nullable=False)
+    returned = db.Column(db.Integer, nullable=False)
+
+    shelfbook = db.relationship("ShelfBook", back_populates="borrowings")
+    user = db.relationship("User", back_populates="borrowings")

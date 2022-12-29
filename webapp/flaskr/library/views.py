@@ -8,12 +8,11 @@ from flask import (
 from webapp.flaskr.library import bp
 from webapp.flaskr.db import db
 
-from .models import Book, Author, Genre
+from .models import Book, Author, Genre, ShelfBook, Borrowing
 
 
 @bp.route("/")
 def index_view():
-
     books = db.session.execute(db.select(Book)).scalars()
 
     return render_template("library/index.html", books=books)
@@ -21,7 +20,6 @@ def index_view():
 
 @bp.route("/books/")
 def books_view():
-
     books = db.session.execute(db.select(Book).order_by(Book.name)).scalars()
 
     return render_template("library/books.html", books=books)
@@ -39,7 +37,6 @@ def books_detail_view(pk):
 
 @bp.route("/authors/")
 def authors_view():
-
     authors = db.session.execute(db.select(Author).order_by(
         Author.name)).scalars()
 
@@ -61,7 +58,6 @@ def authors_detail_view(pk):
 
 @bp.route("/genres/")
 def genres_view():
-
     genres = db.session.execute(db.select(Genre).order_by(
         Genre.genre)).scalars()
 
@@ -83,7 +79,6 @@ def genres_detail_view(pk):
 
 @bp.route("/search")
 def search_view():
-
     q = request.args.get("q")
     books = None
     if q:
@@ -92,3 +87,37 @@ def search_view():
         books = db.session.execute(sql).scalars()
 
     return render_template("library/search.html", books=books)
+
+
+@bp.route("/shelfbooks/")
+def shelfbooks_view():
+    sba = db.orm.aliased(ShelfBook)
+    borrowed = db.select(Borrowing.shelfbook_id).where(Borrowing.returned == 0)
+    sql = db.select(Book.book_id, Book.name, db.func.count(sba.book_id))\
+            .select_from(Book)\
+            .join(sba, db.and_(
+                sba.shelfbook_id.not_in(borrowed),
+                sba.book_id == Book.book_id
+                ), isouter=True)\
+            .group_by(Book.book_id)\
+            .order_by(Book.name)
+
+    shelfbooks = db.session.execute(sql)
+    return render_template("library/shelfbooks.html", shelfbooks=shelfbooks)
+
+
+@bp.route("/borrowings/")
+def borrowings_view():
+    sbb = db.orm.aliased(ShelfBook)
+    borrowed = db.select(Borrowing.shelfbook_id).where(Borrowing.returned == 0)
+    sql = db.select(Book.book_id, Book.name, db.func.count(sbb.book_id))\
+            .select_from(Book)\
+            .join(sbb, db.and_(
+                sbb.shelfbook_id.in_(borrowed),
+                sbb.book_id == Book.book_id
+                ), isouter=True)\
+            .group_by(Book.book_id)\
+            .order_by(Book.name)
+
+    borrowings = db.session.execute(sql)
+    return render_template("library/borrowings.html", borrowings=borrowings)

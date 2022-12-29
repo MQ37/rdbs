@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .table-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    table tbody tr td:not(:last-child) {
+        padding-right: 1em;
+    }
+
+    header {
+        text-align: center;
+    }
+</style>
+
+<header>
+    <h1>Library - ShelfBooks</h1>
+</header>
+
+<div class="table-container">
+<table>
+    <thead>
+        <tr>
+            <th>Book</th>
+            <th># Available</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for (book_id, book_name, available) in shelfbooks %}
+        <tr>
+
+            <td>
+                <a href="{{ url_for('library.books_detail_view', pk=book_id) }}">
+                    {{ book_name }}
+                </a>
+            </td>
+            <td>
+            {% if available %}
+                {{ available }}
+            {% else %}
+                -
+            {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% endblock %}
+
+
