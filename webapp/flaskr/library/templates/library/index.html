@@ -2,6 +2,15 @@
 
 {% block content %}
 <style>
+    .table-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    table tbody tr td:not(:last-child) {
+        padding-right: 1em;
+    }
+
     header {
         text-align: center;
     }
@@ -10,5 +19,30 @@
 <header>
     <h1>Library index</h1>
 </header>
+
+<div class="table-container">
+<table>
+    <thead>
+        <tr>
+            <th>Entity</th>
+            <th># entries</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entity, count in entities.items() %}
+        <tr>
+
+            <td>
+                {{ entity }}
+            </td>
+            <td>
+                {{ count }}
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
 
 {% endblock %}

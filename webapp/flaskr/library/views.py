@@ -13,9 +13,16 @@ from .models import Book, Author, Genre, ShelfBook, Borrowing
 
 @bp.route("/")
 def index_view():
-    books = db.session.execute(db.select(Book)).scalars()
 
-    return render_template("library/index.html", books=books)
+    def get_count(entity):
+        sql = db.select(db.func.count()).select_from(entity)
+        count = db.session.execute(sql).scalars()
+        return list(count)[0]
+
+    to_query = [Book, Author, Genre, ShelfBook, Borrowing]
+    entities = {ent.__name__: get_count(ent) for ent in to_query}
+
+    return render_template("library/index.html", entities=entities)
 
 
 @bp.route("/books/")
